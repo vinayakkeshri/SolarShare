@@ -17,6 +17,8 @@
     .chip{display:inline-block;padding:4px 10px;border-radius:20px;background:#eef6ee;color:var(--accent);font-weight:600}
     .small-muted{font-size:.85rem;color:#6b7280}
     .form-note{font-size:.85rem;color:#374151}
+    /* toast position */
+    #appToast { position: fixed; top: 16px; right: 16px; z-index: 1080; }
   </style>
 </head>
 
@@ -43,10 +45,10 @@
         <p class="form-note">Enter basic details — the platform will estimate suitability & CO₂ savings.</p>
 
         <form id="submitForm">
-          <div class="mb-2"><label class="form-label">Name</label><input required id="ownerName" class="form-control"></div>
-          <div class="mb-2"><label class="form-label">Location</label><input required id="location" class="form-control"></div>
-          <div class="mb-2"><label class="form-label">Area (sq.ft)</label><input required type="number" id="area" class="form-control"></div>
-          <div class="mb-2"><label class="form-label">Sunlight hours/day</label><input required type="number" step="0.1" id="sunHours" class="form-control"></div>
+          <div class="mb-2"><label class="form-label">Name</label><input required id="ownerName" class="form-control" placeholder="Your name"></div>
+          <div class="mb-2"><label class="form-label">Location (City / Pin code)</label><input required id="location" class="form-control" placeholder="Bengaluru, 560001"></div>
+          <div class="mb-2"><label class="form-label">Area (sq.ft)</label><input required type="number" id="area" class="form-control" placeholder="e.g. 200"></div>
+          <div class="mb-2"><label class="form-label">Sunlight hours/day</label><input required type="number" step="0.1" id="sunHours" class="form-control" placeholder="e.g. 6.5"></div>
 
           <div class="mb-2">
             <label class="form-label">Shade</label>
@@ -57,7 +59,7 @@
             </select>
           </div>
 
-          <div class="d-grid"><button class="btn btn-success">Submit</button></div>
+          <div class="d-grid"><button class="btn btn-success">Submit Space</button></div>
         </form>
 
         <hr>
@@ -102,6 +104,9 @@
 
 <footer class="text-center py-3 muted">SolarShare — Demo Frontend</footer>
 
+<!-- Toast container -->
+<div id="appToast" aria-live="polite" aria-atomic="true"></div>
+
 <!-- Libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
@@ -133,18 +138,46 @@ function scoreLabel(score){
 }
 
 // ==============================
+// TOAST helper (non-blocking messages)
+// ==============================
+function showToast(message, type = 'info', timeout = 3500){
+  // create bootstrap toast markup
+  const id = 'toast-' + Date.now();
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `
+    <div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>`;
+  const container = document.getElementById('appToast');
+  container.appendChild(wrapper.firstElementChild);
+  const toastEl = document.getElementById(id);
+  const bToast = new bootstrap.Toast(toastEl, { delay: timeout });
+  bToast.show();
+  // cleanup after hide
+  toastEl.addEventListener('hidden.bs.toast', ()=>{ toastEl.remove(); });
+}
+
+// ==============================
 // API FUNCTIONS
 // ==============================
 async function fetchSubmissions(){
   try{
     const res = await fetch(API_URL);
     const data = await res.json();
-    if(data.success){
+    if(data && data.success){
       submissions = data.data.map(normalizeRow);
       updateUI();
+      return true;
+    } else {
+      console.warn('API returned error on GET', data);
+      return false;
     }
   }catch(err){
-    console.error("GET error:", err);
+    console.warn("GET error:", err);
+    return false;
   }
 }
 
@@ -156,29 +189,35 @@ async function postSubmission(entry){
       body: JSON.stringify(entry)
     });
     const data = await res.json();
-    if(data.success){
+    if(data && data.success){
       submissions.unshift(normalizeRow(data.data));
       updateUI();
+      showToast('Saved to server', 'success', 2500);
       return true;
+    } else {
+      console.warn('API returned error on POST', data);
+      return false;
     }
-  }catch(err){ console.error("POST error:", err); }
-  return false;
+  }catch(err){
+    console.warn("POST error:", err);
+    return false;
+  }
 }
 
 function normalizeRow(r){
   return {
-    owner: r.owner,
-    location: r.location,
-    area: Number(r.area),
-    sunHours: Number(r.sunHours),
-    shade: r.shade,
-    kw: Number(r.kw),
-    annual: Number(r.annual),
-    co2: Number(r.co2),
-    score: Number(r.score),
-    timestamp: r.timestamp,
-    lat: r.lat || null,
-    lng: r.lng || null
+    owner: r.owner || r.Owner || '',
+    location: r.location || r.Location || '',
+    area: Number(r.area || r.Area || 0),
+    sunHours: Number(r.sunHours || r.SunHours || 0),
+    shade: r.shade || r.Shade || 'no',
+    kw: Number(r.kw || r.KW || areaToKW(Number(r.area || 0))),
+    annual: Number(r.annual || r.Annual || 0),
+    co2: Number(r.co2 || r.CO2 || 0),
+    score: Number(r.score || r.Score || suitabilityScore(Number(r.area||0), Number(r.sunHours||5), r.shade || 'no')),
+    timestamp: r.timestamp || r.Timestamp || new Date().toLocaleString(),
+    lat: r.lat || r.Lat || null,
+    lng: r.lng || r.Lng || null
   };
 }
 
@@ -206,11 +245,11 @@ function renderMarkers(){
 document.getElementById('submitForm').addEventListener('submit', async e=>{
   e.preventDefault();
 
-  const owner = ownerName.value.trim();
-  const location = location.value.trim();
-  const area = Number(area.value);
-  const sunHours = Number(sunHours.value);
-  const shade = shade.value;
+  const owner = document.getElementById('ownerName').value.trim();
+  const location = document.getElementById('location').value.trim();
+  const area = Number(document.getElementById('area').value);
+  const sunHours = Number(document.getElementById('sunHours').value);
+  const shade = document.getElementById('shade').value;
 
   const kw = areaToKW(area);
   const annual = annualKWh(kw, sunHours);
@@ -219,9 +258,19 @@ document.getElementById('submitForm').addEventListener('submit', async e=>{
 
   const entry = { owner, location, area, sunHours, shade, kw, annual, co2, score };
 
+  // try save to API
   const ok = await postSubmission(entry);
-  if(!ok){ alert("Error saving."); }
-  else { document.getElementById('submitForm').reset(); }
+  if(!ok){
+    // fallback: save locally (no blocking alert) and show a small toast
+    const timestamp = new Date().toLocaleString();
+    submissions.unshift({ ...entry, timestamp, lat:null, lng:null });
+    updateUI();
+    showToast('Saved locally (offline demo mode)', 'warning', 3500);
+    // log full error info to console for debugging
+    console.warn('Saved locally because API save failed. Check network / script deployment.');
+  } else {
+    document.getElementById('submitForm').reset();
+  }
 });
 
 // ==============================
@@ -231,15 +280,18 @@ function updateUI(){
   const latest = submissions[0];
   if(latest){
     const lbl = scoreLabel(latest.score);
-    latestCard.innerHTML = `
+    document.getElementById('latestCard').innerHTML = `
       <div><strong>${latest.owner}</strong> — ${latest.location}</div>
       <div class="small-muted">Area: ${latest.area} sq.ft | Sun: ${latest.sunHours} hrs | Shade: ${latest.shade}</div>
       <div class="mt-2"><span class="chip">${lbl.label}</span> (${latest.score})</div>
       <div class="mt-2">Est kW: ${latest.kw} | CO₂: ${latest.co2} t/yr</div>
     `;
+  } else {
+    document.getElementById('latestCard').innerText = 'No submissions yet';
   }
 
-  marketplaceList.innerHTML='';
+  const market = document.getElementById('marketplaceList');
+  market.innerHTML='';
   submissions.slice(0,20).forEach(s=>{
     const lbl = scoreLabel(s.score);
     const div = document.createElement("div");
@@ -248,11 +300,12 @@ function updateUI(){
       <strong>${s.owner}</strong> <div class="small-muted">${s.location}</div>
       <span class="chip">${lbl.label}</span>
     `;
-    marketplaceList.appendChild(div);
+    market.appendChild(div);
   });
 
   document.getElementById('totalCount').innerText = submissions.length;
-  document.getElementById('totalCO2').innerText = submissions.reduce((t,x)=>t+x.co2,0).toFixed(2)+" tCO₂";
+  const totalCO2 = submissions.reduce((t,x)=>t + Number(x.co2 || 0),0);
+  document.getElementById('totalCO2').innerText = totalCO2.toFixed(2) + " tCO₂";
 
   renderMarkers();
   updateChart();
@@ -270,16 +323,19 @@ const summaryChart = new Chart(chartCtx, {
 
 function updateChart(){
   const data = submissions.slice(0,8);
-  summaryChart.data.labels = data.map(s=>s.owner);
-  summaryChart.data.datasets[0].data = data.map(s=>s.annual);
+  summaryChart.data.labels = data.map(s=>s.owner || '');
+  summaryChart.data.datasets[0].data = data.map(s=>s.annual || 0);
   summaryChart.update();
 }
 
 // ==============================
 // INIT
 // ==============================
-fetchSubmissions();
-updateUI();
+(async ()=>{
+  const ok = await fetchSubmissions();
+  if(!ok) showToast('Could not load remote submissions (offline demo)', 'warning', 3000);
+  updateUI();
+})();
 </script>
 
 </body>
