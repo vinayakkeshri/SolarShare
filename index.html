@@ -4,8 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SolarShare — Frontend</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
     :root{--accent:#0d6f3a}
     body{padding-top:70px;background:#f7faf7}
@@ -17,7 +19,9 @@
     .form-note{font-size:.85rem;color:#374151}
   </style>
 </head>
+
 <body>
+
 <nav class="navbar navbar-expand-lg fixed-top bg-white border-bottom">
   <div class="container-fluid">
     <a class="navbar-brand fw-bold" href="#">SolarShare</a>
@@ -30,159 +34,183 @@
 
 <div class="container my-4">
   <div class="row g-3">
+
     <div class="col-lg-4">
+
+      <!-- Submission Card -->
       <div class="card p-3">
         <h5 class="mb-2">List Your Roof / Space</h5>
         <p class="form-note">Enter basic details — the platform will estimate suitability & CO₂ savings.</p>
+
         <form id="submitForm">
-          <div class="mb-2"><label class="form-label">Name</label><input required id="ownerName" class="form-control" placeholder="Your name"></div>
-          <div class="mb-2"><label class="form-label">Location (City / Pin code)</label><input required id="location" class="form-control" placeholder="Bengaluru, 560001"></div>
-          <div class="mb-2"><label class="form-label">Area (sq. ft)</label><input required id="area" type="number" class="form-control" placeholder="e.g. 200"></div>
-          <div class="mb-2"><label class="form-label">Avg sunlight hours/day</label><input required id="sunHours" type="number" step="0.1" class="form-control" placeholder="e.g. 6.5"></div>
-          <div class="mb-2"><label class="form-label">Shade (Yes/No)</label>
-            <select id="shade" class="form-select"><option value="no">No</option><option value="partial">Partial</option><option value="yes">Yes</option></select>
+          <div class="mb-2"><label class="form-label">Name</label><input required id="ownerName" class="form-control"></div>
+          <div class="mb-2"><label class="form-label">Location</label><input required id="location" class="form-control"></div>
+          <div class="mb-2"><label class="form-label">Area (sq.ft)</label><input required type="number" id="area" class="form-control"></div>
+          <div class="mb-2"><label class="form-label">Sunlight hours/day</label><input required type="number" step="0.1" id="sunHours" class="form-control"></div>
+
+          <div class="mb-2">
+            <label class="form-label">Shade</label>
+            <select id="shade" class="form-select">
+              <option value="no">No</option>
+              <option value="partial">Partial</option>
+              <option value="yes">Yes</option>
+            </select>
           </div>
-          <div class="mb-2"><label class="form-label">Upload photo (optional)</label><input id="photo" type="file" accept="image/*" class="form-control"></div>
-          <div class="d-grid"><button class="btn btn-success">Submit Space</button></div>
+
+          <div class="d-grid"><button class="btn btn-success">Submit</button></div>
         </form>
 
         <hr>
         <h6>Quick Tips</h6>
         <ul class="small-muted">
-          <li>Flat, unshaded roofs with 5+ sun-hours are ideal.</li>
-          <li>Each 100 sq.ft of good roof supports ~1.5 kW.</li>
+          <li>Flat, unshaded roofs are ideal</li>
+          <li>100 sq.ft → 1.5 kW potential</li>
         </ul>
       </div>
 
+      <!-- Marketplace -->
       <div class="card p-3 mt-3">
-        <h6>Marketplace (Sample)</h6>
+        <h6>Marketplace</h6>
         <div id="marketplaceList" style="max-height:220px;overflow:auto"></div>
       </div>
 
     </div>
 
+    <!-- Right side -->
     <div class="col-lg-8">
+
       <div class="card p-3 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h5 class="mb-0">Map & Suitability</h5>
-          <div class="small-muted">Markers show submitted rooftops and suitability</div>
-        </div>
+        <h5>Map & Suitability</h5>
         <div id="map"></div>
       </div>
 
       <div class="row">
         <div class="col-md-6"><div class="card p-3 mb-3"><h6>Latest Submission</h6><div id="latestCard">No submissions yet</div></div></div>
-        <div class="col-md-6"><div class="card p-3 mb-3"><h6>National Progress Snapshot</h6><div class="small-muted">Rooftops added: <span id="totalCount">0</span></div><div class="mt-2"><div class="small-muted">Estimated total CO₂ saved / year</div><div class="h4" id="totalCO2">0 tCO₂</div></div></div></div>
+
+        <div class="col-md-6"><div class="card p-3 mb-3"><h6>National Snapshot</h6><div class="small-muted">Total rooftops: <span id="totalCount">0</span></div><div class="small-muted mt-2">Total CO₂ saved</div><div class="h4" id="totalCO2">0 tCO₂</div></div></div>
       </div>
 
+      <!-- Chart -->
       <div class="card p-3">
-        <h6>CO₂ & Energy Estimate (Simulated)</h6>
+        <h6>CO₂ & Energy Estimate</h6>
         <canvas id="summaryChart" height="120"></canvas>
-        <div class="small-muted mt-2">Data is simulated for demo. Replace with real API / IoT data for production.</div>
       </div>
 
     </div>
   </div>
 </div>
 
-<footer class="text-center py-3 muted">SolarShare — demo frontend • Replace simulation with real services for production.</footer>
+<footer class="text-center py-3 muted">SolarShare — Demo Frontend</footer>
 
+<!-- Libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// ---------- CONFIG ----------
+// ==============================
+// CONFIG
+// ==============================
 let submissions = [];
-const API_URL = 'https://script.google.com/macros/s/AKfycbx2dNtpGMwTZreq_NJhVViTRxS-kUrR7WQJdovYnvBmC1SegPZvMYGlXaUf2bLLjiE3-w/exec'; // <-- paste your Apps Script exec URL here
-const API_TOKEN = 'vinayak123';         // must match TOKEN in Apps Script
 
-// ---------- Utilities ----------
-function areaToKW(areaSqFt){ return Math.max(0.5, (areaSqFt/100)*1.5); }
-function annualKWh(kwPeak, sunHours){ const pr=0.75; return Math.round(kwPeak * sunHours * 365 * pr); }
-function kWhToCO2(kwh){ return Math.round((kwh * 0.82)/1000 * 100)/100; }
-function suitabilityScore(area, sunHours, shade){
-  let score = 50; score += Math.min(30, sunHours*5); score += Math.min(20, (area/100)*2);
-  if(shade==='no') score += 10; if(shade==='partial') score += 0; if(shade==='yes') score -= 15;
-  return Math.max(0, Math.min(100, Math.round(score)));
+// Your backend URL (NO TOKEN)
+const API_URL = 'https://script.google.com/macros/s/AKfycbwILuCjdMHltVXr64gi33KtjESZPrz6E9m9oy0lm8LIhG6xuqiJiqqshQYoL45dzP4zEA/exec';
+
+// ==============================
+// UTIL FUNCTIONS
+// ==============================
+function areaToKW(a){ return Math.max(0.5, (a/100)*1.5); }
+function annualKWh(kw, sun){ return Math.round(kw * sun * 365 * 0.75); }
+function kWhToCO2(k){ return Math.round((k * 0.82)/1000 * 100)/100; }
+function suitabilityScore(area,sun,shade){
+  let s=50; s+=Math.min(30,sun*5); s+=Math.min(20,(area/100)*2);
+  if(shade=='no')s+=10; if(shade=='yes')s-=15; return Math.max(0,Math.min(100,Math.round(s)));
 }
 function scoreLabel(score){
-  if(score>=75) return {label:'High', color:'green'}; if(score>=50) return {label:'Medium', color:'orange'}; return {label:'Low', color:'red'};
+  if(score>=75)return{label:'High',color:'green'};
+  if(score>=50)return{label:'Medium',color:'orange'};
+  return{label:'Low',color:'red'};
 }
 
-// ---------- Client API helpers ----------
-async function fetchSubmissionsFromAPI(){
+// ==============================
+// API FUNCTIONS
+// ==============================
+async function fetchSubmissions(){
   try{
-    const url = `${API_URL}?token=${encodeURIComponent(API_TOKEN)}`;
-    const res = await fetch(url);
-    const text = await res.text();
-    let payload;
-    try { payload = JSON.parse(text); } catch(e){ throw new Error('Invalid JSON from API: '+text); }
-    if(!payload.success) throw new Error(payload.error || 'API error');
-    submissions = payload.data.map(normalizeRow);
-    updateUI();
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    if(data.success){
+      submissions = data.data.map(normalizeRow);
+      updateUI();
+    }
   }catch(err){
-    console.warn('Could not load remote submissions:', err);
+    console.error("GET error:", err);
   }
 }
-async function postSubmissionToAPI(entry){
+
+async function postSubmission(entry){
   try{
-    const res = await fetch(`${API_URL}?token=${encodeURIComponent(API_TOKEN)}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(entry)
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(entry)
     });
-    const text = await res.text();
-    let payload;
-    try { payload = JSON.parse(text); } catch(e){ throw new Error('Invalid JSON from API: '+text); }
-    if(!payload.success) throw new Error(payload.error || 'API error');
-    const saved = normalizeRow(payload.data);
-    submissions.unshift(saved);
-    updateUI();
-    return true;
-  }catch(err){
-    console.error('Post failed', err);
-    return false;
-  }
+    const data = await res.json();
+    if(data.success){
+      submissions.unshift(normalizeRow(data.data));
+      updateUI();
+      return true;
+    }
+  }catch(err){ console.error("POST error:", err); }
+  return false;
 }
+
 function normalizeRow(r){
   return {
-    owner: r.owner || r.Owner || '',
-    location: r.location || r.Location || '',
-    area: Number(r.area || r.Area || 0),
-    sunHours: Number(r.sunHours || r.SunHours || r['sun_hours'] || 5),
-    shade: r.shade || r.Shade || 'no',
-    kw: Number(r.kw || r.KW || areaToKW(Number(r.area || 0))),
-    annual: Number(r.annual || r.Annual || 0),
-    co2: Number(r.co2 || r.CO2 || 0),
-    score: Number(r.score || r.Score || suitabilityScore(Number(r.area||0), Number(r.sunHours||5), r.shade || 'no')),
-    timestamp: r.timestamp || r.Timestamp || new Date().toLocaleString(),
-    lat: r.lat || r.Lat || null,
-    lng: r.lng || r.Lng || null
+    owner: r.owner,
+    location: r.location,
+    area: Number(r.area),
+    sunHours: Number(r.sunHours),
+    shade: r.shade,
+    kw: Number(r.kw),
+    annual: Number(r.annual),
+    co2: Number(r.co2),
+    score: Number(r.score),
+    timestamp: r.timestamp,
+    lat: r.lat || null,
+    lng: r.lng || null
   };
 }
 
-// ---------- Map ----------
+// ==============================
+// MAP
+// ==============================
 const map = L.map('map').setView([20.5937,78.9629], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'©️ OpenStreetMap contributors' }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 const markerLayer = L.layerGroup().addTo(map);
+
 function renderMarkers(){
   markerLayer.clearLayers();
   submissions.forEach(s=>{
     const color = scoreLabel(s.score).color;
-    const lat = s.lat || 20.5937; const lng = s.lng || 78.9629;
-    const marker = L.circleMarker([lat,lng], {radius:10, color:color, weight:2, fillOpacity:0.7}).addTo(markerLayer);
-    marker.bindPopup(`<b>${s.owner}</b><br>${s.location}<br>Suitability: ${scoreLabel(s.score).label} (${s.score})<br>Est. kW: ${Number(s.kw).toFixed(2)} kW<br>Est. CO₂ saved: ${s.co2} t/yr`);
+    const m = L.circleMarker([s.lat || 20.5937, s.lng || 78.9629], {
+      radius:10,color:color,fillOpacity:0.7
+    }).addTo(markerLayer);
+    m.bindPopup(`<b>${s.owner}</b><br>${s.location}<br>Score: ${s.score}`);
   });
 }
 
-// ---------- Form ----------
-const form = document.getElementById('submitForm');
-form.addEventListener('submit', async function(e){
+// ==============================
+// FORM
+// ==============================
+document.getElementById('submitForm').addEventListener('submit', async e=>{
   e.preventDefault();
-  const owner = document.getElementById('ownerName').value.trim();
-  const location = document.getElementById('location').value.trim();
-  const area = Number(document.getElementById('area').value);
-  const sunHours = Number(document.getElementById('sunHours').value);
-  const shade = document.getElementById('shade').value;
+
+  const owner = ownerName.value.trim();
+  const location = location.value.trim();
+  const area = Number(area.value);
+  const sunHours = Number(sunHours.value);
+  const shade = shade.value;
 
   const kw = areaToKW(area);
   const annual = annualKWh(kw, sunHours);
@@ -191,94 +219,68 @@ form.addEventListener('submit', async function(e){
 
   const entry = { owner, location, area, sunHours, shade, kw, annual, co2, score };
 
-  const saved = await postSubmissionToAPI(entry);
-  if(!saved){
-    console.warn('Saving to API failed — adding locally');
-    const timestamp = new Date().toLocaleString();
-    submissions.unshift({ ...entry, timestamp, lat:null, lng:null });
-    updateUI();
-    alert('Saved locally in demo mode. Check console for API error.');
-  } else {
-    form.reset();
-  }
+  const ok = await postSubmission(entry);
+  if(!ok){ alert("Error saving."); }
+  else { document.getElementById('submitForm').reset(); }
 });
 
-// ---------- UI updates ----------
+// ==============================
+// UI UPDATE
+// ==============================
 function updateUI(){
   const latest = submissions[0];
   if(latest){
     const lbl = scoreLabel(latest.score);
-    document.getElementById('latestCard').innerHTML = `
+    latestCard.innerHTML = `
       <div><strong>${latest.owner}</strong> — ${latest.location}</div>
-      <div class="small-muted">Area: ${latest.area} sq.ft • Sun: ${latest.sunHours} hrs • Shade: ${latest.shade}</div>
-      <div class="mt-2"><span class="chip">${lbl.label}</span> <span class="ms-2">Score: ${latest.score}</span></div>
-      <div class="mt-2">Est. Peak: <strong>${Number(latest.kw).toFixed(2)} kW</strong> • Est. CO₂ saved: <strong>${latest.co2} t/yr</strong></div>
-      <div class="small-muted mt-1">Submitted: ${latest.timestamp || ''}</div>
+      <div class="small-muted">Area: ${latest.area} sq.ft | Sun: ${latest.sunHours} hrs | Shade: ${latest.shade}</div>
+      <div class="mt-2"><span class="chip">${lbl.label}</span> (${latest.score})</div>
+      <div class="mt-2">Est kW: ${latest.kw} | CO₂: ${latest.co2} t/yr</div>
     `;
-  } else {
-    document.getElementById('latestCard').innerText = 'No submissions yet';
   }
 
-  const market = document.getElementById('marketplaceList');
-  market.innerHTML = '';
-  submissions.slice(0,20).forEach((s,i)=>{
+  marketplaceList.innerHTML='';
+  submissions.slice(0,20).forEach(s=>{
     const lbl = scoreLabel(s.score);
-    const div = document.createElement('div');
-    div.className = 'border p-2 mb-2 rounded';
-    div.innerHTML = `<div class="d-flex justify-content-between"><div><strong>${s.owner}</strong><div class="small-muted">${s.location}</div></div><div class="text-end"><span class="chip">${lbl.label}</span><div class="small-muted mt-1">${s.co2} t/yr</div></div></div>`;
-    market.appendChild(div);
+    const div = document.createElement("div");
+    div.className="border p-2 mb-2 rounded";
+    div.innerHTML=`
+      <strong>${s.owner}</strong> <div class="small-muted">${s.location}</div>
+      <span class="chip">${lbl.label}</span>
+    `;
+    marketplaceList.appendChild(div);
   });
 
-  const totalCO2 = submissions.reduce((acc,s)=>acc + Number(s.co2),0);
-  document.getElementById('totalCO2').innerText = totalCO2.toFixed(2) + ' tCO₂';
   document.getElementById('totalCount').innerText = submissions.length;
+  document.getElementById('totalCO2').innerText = submissions.reduce((t,x)=>t+x.co2,0).toFixed(2)+" tCO₂";
 
   renderMarkers();
   updateChart();
 }
 
-// ---------- Demo loader ----------
-document.getElementById('demoSample').addEventListener('click', ()=>{
-  const sample = [
-    {owner:'Ravi', location:'Bengaluru, 560001', area:200, sunHours:6.5, shade:'no'},
-    {owner:'Anita', location:'Chennai, 600001', area:150, sunHours:5.8, shade:'partial'},
-    {owner:'Sunil', location:'Jaipur, 302001', area:300, sunHours:7.2, shade:'no'},
-  ];
-  sample.forEach(s=>{
-    const kw = areaToKW(s.area);
-    const annual = annualKWh(kw, s.sunHours);
-    const co2 = kWhToCO2(annual);
-    const score = suitabilityScore(s.area, s.sunHours, s.shade);
-    submissions.unshift({...s, kw, annual, co2, score, timestamp: new Date().toLocaleString(), lat:null, lng:null});
-  });
-  submissions.forEach((s,i)=>{
-    if(i===0){s.lat=12.9716; s.lng=77.5946}
-    if(i===1){s.lat=13.0827; s.lng=80.2707}
-    if(i===2){s.lat=26.9124; s.lng=75.7873}
-  });
-  updateUI();
+// ==============================
+// CHART
+// ==============================
+const chartCtx = document.getElementById("summaryChart").getContext("2d");
+const summaryChart = new Chart(chartCtx, {
+  type: 'bar',
+  data: { labels:[], datasets:[{ label:'Annual kWh', data:[] }] },
+  options:{responsive:true,maintainAspectRatio:false}
 });
 
-// ---------- Chart ----------
-const ctx = document.getElementById('summaryChart').getContext('2d');
-const summaryChart = new Chart(ctx, {
-  type: 'bar',
-  data: {labels:[], datasets:[{label:'Estimated annual kWh', data:[], tension:0.4}]},
-  options: {responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
-});
 function updateChart(){
-  const top = submissions.slice(0,8);
-  summaryChart.data.labels = top.map(s=>s.owner + ' • ' + (s.location || '').split(',')[0]);
-  summaryChart.data.datasets[0].data = top.map(s=>s.annual || 0);
+  const data = submissions.slice(0,8);
+  summaryChart.data.labels = data.map(s=>s.owner);
+  summaryChart.data.datasets[0].data = data.map(s=>s.annual);
   summaryChart.update();
 }
 
-// ---------- init ----------
+// ==============================
+// INIT
+// ==============================
+fetchSubmissions();
 updateUI();
-// try loading remote (if API_URL is configured)
-if(API_URL && !API_URL.includes('https://script.google.com/macros/s/AKfycbx2dNtpGMwTZreq_NJhVViTRxS-kUrR7WQJdovYnvBmC1SegPZvMYGlXaUf2bLLjiE3-w/exec')) {
-  fetchSubmissionsFromAPI();
-}
 </script>
+
 </body>
 </html>
